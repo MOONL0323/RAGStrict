@@ -16,45 +16,45 @@ export const api = {
   // 文档管理API
   documents: {
     upload: (formData: FormData) => 
-      apiClient.post('/v1/documents/upload', formData, {
+      apiClient.post('/documents/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       }),
     
     list: async (params?: any) => {
-      const response = await apiClient.get('/v1/documents/list', { params });
+      const response = await apiClient.get('/documents/list', { params });
       // 后端直接返回数组，所以data就是数组
       return response.data || [];
     },
     
     search: async (params?: any) => {
-      const response = await apiClient.get('/v1/documents/search', { params });
+      const response = await apiClient.get('/documents/search', { params });
       // 后端直接返回数组
       return response.data || [];
     },
     
     get: async (id: string) => {
-      const response = await apiClient.get(`/v1/documents/${id}`);
+      const response = await apiClient.get(`/documents/${id}`);
       // 后端直接返回对象
       return response.data;
     },
     
     delete: (id: string) => 
-      apiClient.delete(`/v1/documents/${id}`)
+      apiClient.delete(`/documents/${id}`)
   },
 
   // MCP相关API
   mcp: {
     searchCodeExamples: (data: any) => 
-      apiClient.post('/v1/mcp/search-code-examples', data),
+      apiClient.post('/mcp/search-code-examples', data),
     
     getDesignDocs: (params: any) => 
-      apiClient.post('/v1/mcp/get-design-docs', params),
+      apiClient.post('/mcp/get-design-docs', params),
     
     getCodingStandards: (language: string) => 
-      apiClient.get(`/v1/mcp/coding-standards/${language}`),
+      apiClient.get(`/mcp/coding-standards/${language}`),
     
     getTeamContext: (team: string, project?: string) => 
-      apiClient.get(`/v1/mcp/team-context/${team}`, { 
+      apiClient.get(`/mcp/team-context/${team}`, { 
         params: project ? { project } : undefined 
       })
   }

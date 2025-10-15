@@ -3,6 +3,7 @@
  */
 
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import { API_BASE_URL, API_V1_PREFIX, API_TIMEOUT } from '../config/apiConfig';
 
 export interface ApiResponse<T = any> {
   success: boolean;
@@ -16,8 +17,8 @@ export class ApiClient {
 
   constructor(config?: AxiosRequestConfig) {
     this.client = axios.create({
-      baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api',
-      timeout: 10000,
+      baseURL: `${API_BASE_URL}${API_V1_PREFIX}`,
+      timeout: API_TIMEOUT,
       withCredentials: false, // 修复CORS问题：当后端使用通配符时不能使用withCredentials
       headers: {
         'Content-Type': 'application/json',
@@ -169,3 +170,7 @@ export class ApiClient {
     delete this.client.defaults.headers.common['Authorization'];
   }
 }
+
+// 创建并导出默认实例
+const apiClient = new ApiClient();
+export default apiClient;

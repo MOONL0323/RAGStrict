@@ -13,7 +13,7 @@ from app.services.graph_service import get_graph_service
 from app.services.entity_extractor import get_entity_extractor
 
 logger = structlog.get_logger()
-router = APIRouter(prefix="/graph", tags=["graph"])
+router = APIRouter()  # 移除 prefix,由 v1/__init__.py 统一管理
 
 
 @router.post("/store-from-document/{document_id}")

@@ -3,6 +3,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Card,
   Table,
@@ -43,6 +44,7 @@ interface DocumentItem {
 }
 
 const CoreDocumentList: React.FC = () => {
+  const navigate = useNavigate();
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
@@ -110,17 +112,9 @@ const CoreDocumentList: React.FC = () => {
     }
   };
 
-  const viewDocument = async (id: number) => {
-    try {
-      // 修复: API现在直接返回文档对象
-      const doc = await api.documents.get(id.toString());
-      setSelectedDocument(doc);
-      setDetailModalVisible(true);
-      
-    } catch (error: any) {
-      console.error('获取文档详情失败:', error);
-      message.error('获取文档详情失败');
-    }
+  const viewDocument = (id: number) => {
+    // 导航到文档详情页面
+    navigate(`/documents/${id}`);
   };
 
   const deleteDocument = async (id: number) => {

@@ -63,10 +63,43 @@ export class SearchService {
     try {
       console.log('发送高级搜索请求:', request);
       
-      const response = await apiClient.post('/v1/search/advanced', request);
+      // 转换为后端期望的格式
+      const backendRequest = {
+        query: request.query,
+        top_k: request.limit || 10,
+        document_type: request.filters?.doc_type
+      };
+      
+      const response = await apiClient.post('/search/semantic', backendRequest);
 
       if (response.data.success) {
-        return response.data;
+        // 转换后端响应为前端格式
+        const results = response.data.results.map((item: any) => ({
+          id: item.chunk_id,
+          title: item.document_title,
+          content: item.content,
+          description: item.content.substring(0, 200),
+          type: 'document' as const,
+          score: item.similarity,
+          metadata: {
+            ...item.metadata,
+            chunk_index: item.chunk_index
+          }
+        }));
+        
+        return {
+          success: true,
+          data: {
+            results,
+            total: response.data.total,
+            took: 0,
+            aggregations: {
+              types: {},
+              languages: {},
+              teams: {}
+            }
+          }
+        };
       } else {
         throw new Error(response.data.error || '搜索请求失败');
       }
@@ -83,7 +116,7 @@ export class SearchService {
    */
   static async getSearchSuggestions(query: string): Promise<string[]> {
     try {
-      const response = await apiClient.get(`/api/v1/search/suggestions?q=${encodeURIComponent(query)}`);
+      const response = await apiClient.get(`/search/suggestions?q=${encodeURIComponent(query)}`);
       
       if (response.data.success) {
         return response.data.data.suggestions || [];
@@ -101,7 +134,7 @@ export class SearchService {
    */
   static async getPopularSearches(): Promise<string[]> {
     try {
-      const response = await apiClient.get('/v1/search/popular');
+      const response = await apiClient.get('/search/popular');
       
       if (response.data.success) {
         return response.data.data.searches || [];
@@ -128,7 +161,7 @@ export class SearchService {
    */
   static async getSearchStats(): Promise<any> {
     try {
-      const response = await apiClient.get('/v1/search/stats');
+      const response = await apiClient.get('/search/stats');
       
       if (response.data.success) {
         return response.data.data;
@@ -149,7 +182,7 @@ export class SearchService {
    * 本地模拟搜索结果
    */
   private static generateMockSearchResults(request: SearchRequest): SearchResponse {
-    const { query, mode } = request;
+    const { query } = request;
     
     // 基于搜索词生成不同的结果
     let results: SearchResultItem[] = [];

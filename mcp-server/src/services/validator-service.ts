@@ -83,6 +83,18 @@ export class ValidatorService {
           maxLength: 50,
           nullable: true
         },
+        team: {
+          type: 'string',
+          minLength: 1,
+          maxLength: 100,
+          nullable: true
+        },
+        project: {
+          type: 'string',
+          minLength: 1,
+          maxLength: 100,
+          nullable: true
+        },
         limit: {
           type: 'number',
           minimum: 1,

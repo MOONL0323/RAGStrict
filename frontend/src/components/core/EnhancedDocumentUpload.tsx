@@ -76,7 +76,7 @@ const EnhancedDocumentUpload: React.FC = () => {
   const loadClassifications = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/v1/classifications/options');
+      const response = await apiClient.get('/classifications/options');
       
       if (response.success && response.data) {
         setClassifications(response.data);
@@ -129,7 +129,7 @@ const EnhancedDocumentUpload: React.FC = () => {
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       formData.append('uploaded_by', user.id || 'anonymous');
 
-      const response = await apiClient.post('/v1/documents/upload', formData, {
+      const response = await apiClient.post('/documents/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 

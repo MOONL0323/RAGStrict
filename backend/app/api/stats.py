@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 from app.core.database import get_db
-from app.models.database import Document, DocumentChunk, Entity, Relation, User
+from app.models.database import Document, DocumentChunk, Entity, Relation, User, DevType, DocumentType
 from app.schemas.stats import DashboardStats, DocumentStats, EntityStats
 from datetime import datetime, timedelta
 
@@ -19,10 +19,10 @@ async def get_dashboard_stats(db: AsyncSession = Depends(get_db)):
         # 文档统计
         total_documents = (await db.execute(select(func.count(Document.id)))).scalar() or 0
         processing_documents = (await db.execute(
-            select(func.count(Document.id)).filter(Document.status == 'processing')
+            select(func.count(Document.id)).filter(Document.processing_status == 'processing')
         )).scalar() or 0
         completed_documents = (await db.execute(
-            select(func.count(Document.id)).filter(Document.status == 'completed')
+            select(func.count(Document.id)).filter(Document.processing_status == 'completed')
         )).scalar() or 0
         
         # 文本块统计
@@ -39,7 +39,8 @@ async def get_dashboard_stats(db: AsyncSession = Depends(get_db)):
         
         # 知识图谱数量（按项目分组计算）
         knowledge_graphs = (await db.execute(
-            select(func.count(func.distinct(Document.project)))
+            select(func.count(func.distinct(Document.project_id)))
+            .filter(Document.project_id.isnot(None))
         )).scalar() or 0
         
         return DashboardStats(
@@ -63,21 +64,25 @@ async def get_document_stats(db: AsyncSession = Depends(get_db)):
         # 总数统计
         total = (await db.execute(select(func.count(Document.id)))).scalar() or 0
         processing = (await db.execute(
-            select(func.count(Document.id)).filter(Document.status == 'processing')
+            select(func.count(Document.id)).filter(Document.processing_status == 'processing')
         )).scalar() or 0
         completed = (await db.execute(
-            select(func.count(Document.id)).filter(Document.status == 'completed')
+            select(func.count(Document.id)).filter(Document.processing_status == 'completed')
         )).scalar() or 0
         failed = (await db.execute(
-            select(func.count(Document.id)).filter(Document.status == 'failed')
+            select(func.count(Document.id)).filter(Document.processing_status == 'failed')
         )).scalar() or 0
         
-        # 按类型统计
+        # 按类型统计 - 通过 JOIN DevType 表
         business_docs = (await db.execute(
-            select(func.count(Document.id)).filter(Document.doc_type == 'business_doc')
+            select(func.count(Document.id))
+            .join(DevType, Document.dev_type_id == DevType.id)
+            .filter(DevType.category == DocumentType.BUSINESS_DOC)
         )).scalar() or 0
         demo_code = (await db.execute(
-            select(func.count(Document.id)).filter(Document.doc_type == 'demo_code')
+            select(func.count(Document.id))
+            .join(DevType, Document.dev_type_id == DevType.id)
+            .filter(DevType.category == DocumentType.DEMO_CODE)
         )).scalar() or 0
         
         # 按时间统计（最近7天）
@@ -88,9 +93,9 @@ async def get_document_stats(db: AsyncSession = Depends(get_db)):
         
         # 按团队统计
         team_stats_result = await db.execute(
-            select(Document.team, func.count(Document.id).label('count'))
-            .filter(Document.team.isnot(None))
-            .group_by(Document.team)
+            select(Document.team_id, func.count(Document.id).label('count'))
+            .filter(Document.team_id.isnot(None))
+            .group_by(Document.team_id)
         )
         team_stats = team_stats_result.all()
         
@@ -152,15 +157,16 @@ async def get_chunk_stats(db: AsyncSession = Depends(get_db)):
     try:
         total = (await db.execute(select(func.count(DocumentChunk.id)))).scalar() or 0
         
-        # 按文档类型统计
+        # 按文档类型统计 - 通过 JOIN DevType 表
         chunk_stats_result = await db.execute(
             select(
-                Document.doc_type,
+                DevType.category,
                 func.count(DocumentChunk.id).label('chunk_count'),
                 func.avg(func.length(DocumentChunk.content)).label('avg_length')
             )
             .join(DocumentChunk, Document.id == DocumentChunk.document_id)
-            .group_by(Document.doc_type)
+            .join(DevType, Document.dev_type_id == DevType.id)
+            .group_by(DevType.category)
         )
         chunk_stats = chunk_stats_result.all()
         
@@ -206,8 +212,8 @@ async def get_user_stats(db: AsyncSession = Depends(get_db)):
         
         # 活跃项目数（有文档上传的项目）
         active_projects = (await db.execute(
-            select(func.count(func.distinct(Document.project)))
-            .filter(Document.project.isnot(None))
+            select(func.count(func.distinct(Document.project_id)))
+            .filter(Document.project_id.isnot(None))
         )).scalar() or 0
         
         return {
@@ -220,3 +226,54 @@ async def get_user_stats(db: AsyncSession = Depends(get_db)):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"获取用户统计失败: {str(e)}")
+
+
+@router.get("/knowledge-base")
+async def get_knowledge_base_stats(db: AsyncSession = Depends(get_db)):
+    """
+    获取知识库统计 - 为MCP服务器提供知识库总览
+    """
+    try:
+        # 文档总数
+        total_documents = (await db.execute(select(func.count(Document.id)))).scalar() or 0
+        
+        # 文本块总数
+        total_chunks = (await db.execute(select(func.count(DocumentChunk.id)))).scalar() or 0
+        
+        # 实体和关系总数
+        total_entities = (await db.execute(select(func.count(Entity.id)))).scalar() or 0
+        total_relations = (await db.execute(select(func.count(Relation.id)))).scalar() or 0
+        
+        # 按编程语言分类 (从 dev_type 推断)
+        languages_query = select(DevType.name).distinct()
+        languages_result = await db.execute(languages_query)
+        languages = [row[0] for row in languages_result.all()]
+        
+        # 团队列表
+        from app.models.database import Team
+        teams_query = select(Team.name)
+        teams_result = await db.execute(teams_query)
+        teams = [row[0] for row in teams_result.all()]
+        
+        # 项目列表
+        from app.models.database import Project
+        projects_query = select(Project.name)
+        projects_result = await db.execute(projects_query)
+        projects = [row[0] for row in projects_result.all()]
+        
+        return {
+            "success": True,
+            "data": {
+                "total_documents": total_documents,
+                "total_chunks": total_chunks,
+                "total_entities": total_entities,
+                "total_relations": total_relations,
+                "languages": languages,
+                "teams": teams,
+                "projects": projects,
+                "last_updated": datetime.now().isoformat()
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取知识库统计失败: {str(e)}")

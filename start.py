@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """
 智能启动脚本
-根据配置自动启动所有必需的服务
+根据配置自动启动所有必需的服务，并自动初始化数据
 """
 
 import os
 import sys
 import subprocess
 import time
+import asyncio
 from pathlib import Path
 
 # 添加项目路径
@@ -22,6 +23,105 @@ def print_banner():
     print("\n" + "=" * 70)
     print("  AI Context System - 智能启动器")
     print("=" * 70 + "\n")
+
+
+async def init_database_data():
+    """初始化数据库数据（分类等）"""
+    try:
+        # 添加backend目录到sys.path
+        import sys
+        backend_path = os.path.join(os.path.dirname(__file__), 'backend')
+        if backend_path not in sys.path:
+            sys.path.insert(0, backend_path)
+        
+        # 先初始化数据库连接
+        from app.core import database as db_module
+        await db_module.init_db()
+        
+        # 确保创建数据库表
+        from app.models.database import DevType, DocumentType, Base
+        from sqlalchemy import select
+        import uuid
+        
+        # 创建所有表
+        async with db_module.engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        
+        # 使用会话工厂创建session
+        async with db_module.async_session() as session:
+            # 检查是否已有分类数据
+            result = await session.execute(select(DevType))
+            existing = result.scalars().first()
+            
+            if existing:
+                print("   数据库数据已存在")
+                return
+            
+            print("   初始化分类数据...")
+            
+            # 业务文档类型
+            business_types = [
+                ("design_doc", "设计文档", "系统设计、架构设计等文档", "", 1),
+                ("requirement_doc", "需求文档", "产品需求、功能需求等文档", "", 2),
+                ("technical_doc", "技术文档", "技术方案、技术选型等文档", "", 3),
+                ("test_doc", "测试文档", "测试计划、测试用例等文档", "", 4),
+                ("user_manual", "用户手册", "用户使用指南、操作手册", "", 5),
+            ]
+            
+            # Demo代码类型
+            demo_types = [
+                ("api_example", "API示例", "API接口示例代码", "", 1),
+                ("package_example", "工具包示例", "工具包、库的示例代码", "", 2),
+                ("unittest_example", "单元测试", "单元测试示例代码", "", 3),
+                ("full_project", "完整项目示例", "完整的项目示例代码", "", 4),
+            ]
+            
+            # 规范文档类型
+            checklist_types = [
+                ("dev_standard", "开发规范", "开发流程、编码规范等", "", 1),
+                ("code_standard", "代码规范", "代码风格、命名规范等", "", 2),
+                ("test_standard", "测试规范", "测试流程、测试标准等", "", 3),
+            ]
+            
+            # 插入数据
+            for name, display_name, desc, icon, order in business_types:
+                session.add(DevType(
+                    id=str(uuid.uuid4()),
+                    category=DocumentType.BUSINESS_DOC,
+                    name=name,
+                    display_name=display_name,
+                    description=desc,
+                    icon=icon,
+                    sort_order=order
+                ))
+            
+            for name, display_name, desc, icon, order in demo_types:
+                session.add(DevType(
+                    id=str(uuid.uuid4()),
+                    category=DocumentType.DEMO_CODE,
+                    name=name,
+                    display_name=display_name,
+                    description=desc,
+                    icon=icon,
+                    sort_order=order
+                ))
+            
+            for name, display_name, desc, icon, order in checklist_types:
+                session.add(DevType(
+                    id=str(uuid.uuid4()),
+                    category=DocumentType.CHECKLIST,
+                    name=name,
+                    display_name=display_name,
+                    description=desc,
+                    icon=icon,
+                    sort_order=order
+                ))
+            
+            await session.commit()
+            print("   ✓ 分类数据初始化完成")
+            
+    except Exception as e:
+        print(f"   ⚠ 分类数据初始化失败（可以后续手动初始化）: {e}")
 
 
 def check_dependencies(env_vars):
@@ -138,15 +238,22 @@ def install_dependencies(env_vars):
     requirements_file = project_root / 'backend' / 'requirements.txt'
     
     if requirements_file.exists():
-        print(f"   安装基础依赖...")
-        result = subprocess.run(
-            [sys.executable, '-m', 'pip', 'install', '-q', '-r', str(requirements_file)],
-            capture_output=True
-        )
-        if result.returncode == 0:
+        print(f"   检查基础依赖...")
+        # 检查是否需要安装依赖
+        try:
+            import fastapi
+            import uvicorn
             print(f"   > 基础依赖已安装")
-        else:
-            print(f"   > 基础依赖安装失败")
+        except ImportError:
+            print(f"   安装基础依赖...")
+            result = subprocess.run(
+                [sys.executable, '-m', 'pip', 'install', '-q', '-r', str(requirements_file)],
+                capture_output=True
+            )
+            if result.returncode == 0:
+                print(f"   > 基础依赖已安装")
+            else:
+                print(f"   > 基础依赖安装失败，请手动安装：pip install -r backend/requirements.txt")
     
     # 外网环境需要本地 Embedding 模型依赖
     if network_env == 'internet':
@@ -154,8 +261,8 @@ def install_dependencies(env_vars):
         try:
             import sentence_transformers
             print(f"   > Embedding 依赖已安装")
-        except:
-            print(f"   > Embedding 依赖检查跳过（开发模式可选）")
+        except ImportError:
+            print(f"   > Embedding 依赖未安装（开发模式可选）")
     
     print()
 
@@ -166,8 +273,6 @@ def start_backend(env_vars):
     
     backend_dir = project_root / 'backend'
     port = env_vars.get('BACKEND_PORT', '8000')
-    
-    os.chdir(backend_dir)
     
     # 启动 FastAPI
     cmd = [
@@ -186,7 +291,11 @@ def start_backend(env_vars):
     print(f"   文档：http://localhost:{port}/docs")
     print()
     
-    subprocess.Popen(cmd)
+    try:
+        subprocess.Popen(cmd, cwd=str(backend_dir))
+    except Exception as e:
+        print(f"   [错误] 后端启动失败：{e}")
+
 
 
 def start_frontend(env_vars):
@@ -196,10 +305,24 @@ def start_frontend(env_vars):
     frontend_dir = project_root / 'frontend'
     port = env_vars.get('FRONTEND_PORT', '3000')
     
+    # 检查前端目录是否存在
+    if not frontend_dir.exists():
+        print("   [警告] frontend/ 目录不存在，跳过前端启动")
+        return
+    
     os.chdir(frontend_dir)
     
-    # 启动 React (Windows 使用 npm.cmd)
-    npm_cmd = 'npm.cmd' if os.name == 'nt' else 'npm'
+    # 跨平台 npm 命令
+    npm_cmd = 'npm.cmd' if sys.platform == 'win32' else 'npm'
+    
+    # 检查 node_modules 是否存在
+    if not (frontend_dir / 'node_modules').exists():
+        print(f"   检测到首次运行，正在安装前端依赖...")
+        install_result = subprocess.run([npm_cmd, 'install'], capture_output=True, text=True)
+        if install_result.returncode != 0:
+            print(f"   [警告] 前端依赖安装失败：{install_result.stderr}")
+            return
+    
     cmd = [npm_cmd, 'start']
     
     print(f"   命令：{' '.join(cmd)}")
@@ -210,7 +333,11 @@ def start_frontend(env_vars):
     env = os.environ.copy()
     env['PORT'] = port
     
-    subprocess.Popen(cmd, env=env)
+    try:
+        subprocess.Popen(cmd, env=env, cwd=str(frontend_dir))
+    except Exception as e:
+        print(f"   [错误] 前端启动失败：{e}")
+
 
 
 def start_mcp(env_vars):
@@ -220,17 +347,35 @@ def start_mcp(env_vars):
     mcp_dir = project_root / 'mcp-server'
     port = env_vars.get('MCP_PORT', '3001')
     
+    # 检查 MCP 目录是否存在
+    if not mcp_dir.exists():
+        print("   [警告] mcp-server/ 目录不存在，跳过 MCP 启动")
+        return
+    
     os.chdir(mcp_dir)
     
-    # 启动 MCP Server (Windows 使用 npm.cmd)
-    npm_cmd = 'npm.cmd' if os.name == 'nt' else 'npm'
+    # 跨平台 npm 命令
+    npm_cmd = 'npm.cmd' if sys.platform == 'win32' else 'npm'
+    
+    # 检查 node_modules 是否存在
+    if not (mcp_dir / 'node_modules').exists():
+        print(f"   检测到首次运行，正在安装 MCP 依赖...")
+        install_result = subprocess.run([npm_cmd, 'install'], capture_output=True, text=True)
+        if install_result.returncode != 0:
+            print(f"   [警告] MCP 依赖安装失败：{install_result.stderr}")
+            return
+    
     cmd = [npm_cmd, 'run', 'dev' if env_vars.get('RELOAD') == 'true' else 'start']
     
     print(f"   命令：{' '.join(cmd)}")
     print(f"   访问：http://localhost:{port}")
     print()
     
-    subprocess.Popen(cmd)
+    try:
+        subprocess.Popen(cmd, cwd=str(mcp_dir))
+    except Exception as e:
+        print(f"   [错误] MCP 启动失败：{e}")
+
 
 
 def deploy_k8s(env_vars):
@@ -290,6 +435,14 @@ def main():
         
         # 安装 Python 依赖
         install_dependencies(env_vars)
+        
+        # 初始化数据库数据
+        print("[初始化数据库]\n")
+        try:
+            asyncio.run(init_database_data())
+        except Exception as e:
+            print(f"   ⚠ 数据库初始化跳过: {e}")
+        print()
         
         # 启动服务
         print("[启动服务]\n")

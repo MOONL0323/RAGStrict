@@ -11,6 +11,7 @@ from ..classifications import router as classifications_router
 from ..search import router as search_router
 from ..entities import router as entities_router
 from ..graph import router as graph_router
+from ..design_docs import router as design_docs_router
 
 api_router = APIRouter()
 
@@ -26,7 +27,9 @@ api_router.include_router(search_router, tags=["语义搜索"])
 # 实体提取
 api_router.include_router(entities_router, tags=["实体提取"])
 # 知识图谱
-api_router.include_router(graph_router, tags=["知识图谱"])
+api_router.include_router(graph_router, prefix="/graph", tags=["知识图谱"])
+# 设计文档
+api_router.include_router(design_docs_router, prefix="/design", tags=["设计文档"])
 # MCP工具
 api_router.include_router(mcp_core_router, prefix="/mcp", tags=["MCP-核心"])
 # 统计信息

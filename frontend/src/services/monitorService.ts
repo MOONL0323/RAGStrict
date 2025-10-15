@@ -46,7 +46,7 @@ export class MonitorService {
     try {
       console.log('获取系统服务状态');
       
-      const response = await apiClient.get('/v1/monitor/services');
+      const response = await apiClient.get('/monitor/services');
 
       if (response.data.success) {
         return response.data.data.services || [];
@@ -66,7 +66,7 @@ export class MonitorService {
    */
   static async getSystemMetrics(): Promise<SystemMetrics> {
     try {
-      const response = await apiClient.get('/v1/monitor/metrics');
+      const response = await apiClient.get('/monitor/metrics');
 
       if (response.data.success) {
         return response.data.data.metrics;
@@ -86,7 +86,7 @@ export class MonitorService {
    */
   static async getSystemEvents(limit: number = 50): Promise<SystemEvent[]> {
     try {
-      const response = await apiClient.get(`/api/v1/monitor/events?limit=${limit}`);
+      const response = await apiClient.get(`/v1/monitor/events?limit=${limit}`);
 
       if (response.data.success) {
         return response.data.data.events || [];
@@ -106,7 +106,7 @@ export class MonitorService {
    */
   static async getPerformanceHistory(hours: number = 24): Promise<any[]> {
     try {
-      const response = await apiClient.get(`/api/v1/monitor/performance?hours=${hours}`);
+      const response = await apiClient.get(`/v1/monitor/performance?hours=${hours}`);
 
       if (response.data.success) {
         return response.data.data.history || [];
@@ -126,7 +126,7 @@ export class MonitorService {
    */
   static async restartService(serviceName: string): Promise<boolean> {
     try {
-      const response = await apiClient.post('/v1/monitor/services/restart', {
+      const response = await apiClient.post('/monitor/services/restart', {
         service: serviceName
       });
 

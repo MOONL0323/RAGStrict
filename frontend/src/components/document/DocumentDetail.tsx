@@ -30,6 +30,7 @@ import {
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { API_ENDPOINTS } from '../../config/apiConfig';
 
 const { Title, Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
@@ -103,7 +104,7 @@ const DocumentDetail: React.FC = () => {
   const loadDocumentDetail = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:8080/api/v1/documents/${id}/detail`);
+      const response = await fetch(API_ENDPOINTS.DOCUMENTS.FULL_DETAIL(id!));
       
       if (response.ok) {
         const data = await response.json();
@@ -129,7 +130,7 @@ const DocumentDetail: React.FC = () => {
   const loadChunks = async () => {
     setLoadingChunks(true);
     try {
-      const response = await fetch(`http://localhost:8080/api/v1/documents/${id}/chunks`);
+      const response = await fetch(API_ENDPOINTS.DOCUMENTS.CHUNKS(id!));
       
       if (response.ok) {
         const data = await response.json();
@@ -147,7 +148,7 @@ const DocumentDetail: React.FC = () => {
 
   const handleDownload = async () => {
     try {
-      const response = await fetch(`http://localhost:8080/api/v1/documents/${id}/download`);
+      const response = await fetch(API_ENDPOINTS.DOCUMENTS.DOWNLOAD(id!));
       
       if (response.ok) {
         const blob = await response.blob();
@@ -178,7 +179,7 @@ const DocumentDetail: React.FC = () => {
     
     setChunkingInProgress(true);
     try {
-      const response = await fetch(`http://localhost:8080/api/v1/documents/${id}/chunk`, {
+      const response = await fetch(API_ENDPOINTS.DOCUMENTS.CHUNK(id), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -217,7 +218,7 @@ const DocumentDetail: React.FC = () => {
     
     setEmbeddingInProgress(true);
     try {
-      const response = await fetch(`http://localhost:8080/api/v1/documents/${id}/embed`, {
+      const response = await fetch(API_ENDPOINTS.DOCUMENTS.EMBED(id), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

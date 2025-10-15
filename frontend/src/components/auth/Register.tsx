@@ -29,7 +29,7 @@ const Register: React.FC = () => {
       
       const { confirmPassword, ...registerData } = values;
       
-      const response = await apiClient.post('/v1/auth/register', registerData);
+      const response = await apiClient.post('/auth/register', registerData);
       
       if (response.success) {
         message.success('注册成功！请登录');

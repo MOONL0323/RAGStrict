@@ -9,6 +9,7 @@ import { LoginPage } from '../components/auth/LoginPage';
 import { RegisterPage } from '../components/auth/RegisterPage';
 import { MainLayout } from '../components/layout/MainLayout';
 import DocumentManager from '../components/document/DocumentManager';
+import DocumentDetail from '../components/document/DocumentDetail';
 import { Dashboard } from '../components/dashboard/Dashboard';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import LiveKnowledgeGraph from '../components/knowledge/LiveKnowledgeGraph';
@@ -81,6 +82,7 @@ export const AppRoutes: React.FC = () => {
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="documents" element={<DocumentManager />} />
+        <Route path="documents/:id" element={<DocumentDetail />} />
         <Route path="search" element={<AdvancedSearch />} />
         <Route path="knowledge-graph" element={<LiveKnowledgeGraph />} />
         <Route path="qa" element={<IntelligentQA />} />

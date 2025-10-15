@@ -71,15 +71,13 @@ export class RagService {
     try {
       logger.info('搜索代码示例:', params);
 
-      const response = await this.client.post<ApiResponse<RagSearchResult[]>>('/api/v1/docs/search', {
+      const response = await this.client.post<ApiResponse<RagSearchResult[]>>('/api/v1/mcp/search-code-examples', {
         query: params.query,
-        filters: {
-          doc_type: 'demo_code',
-          language: params.language,
-          framework: params.framework
-        },
-        limit: params.limit || 5,
-        search_type: 'hybrid' // 混合搜索：向量+关键词
+        language: params.language,
+        framework: params.framework,
+        team: params.team,
+        project: params.project,
+        limit: params.limit || 5
       });
 
       if (!response.data.success) {
@@ -133,16 +131,14 @@ export class RagService {
       }
 
       // 降级到通用文档搜索
-      const response = await this.client.post<ApiResponse<RagSearchResult[]>>('/api/v1/docs/search', {
-        query: params.query,
-        filters: {
-          doc_type: 'business_doc',
-          dev_type: params.doc_type,
+      const response = await this.client.get<ApiResponse<RagSearchResult[]>>('/api/v1/documents/search', {
+        params: {
+          query: params.query,
+          doc_type: params.doc_type,
           team: params.team,
-          project: params.project
-        },
-        limit: 10,
-        search_type: 'semantic' // 语义搜索
+          project: params.project,
+          limit: 10
+        }
       });
 
       if (!response.data.success) {
@@ -195,14 +191,12 @@ export class RagService {
       }
 
       // 降级到文档搜索
-      const response = await this.client.post<ApiResponse<RagSearchResult[]>>('/api/v1/docs/search', {
-        query: `${params.language} coding standards ${params.category || ''}`,
-        filters: {
+      const response = await this.client.get<ApiResponse<RagSearchResult[]>>('/api/v1/documents/search', {
+        params: {
+          query: `${params.language} coding standards ${params.category || ''}`,
           doc_type: 'business_doc',
-          tags: ['coding-standards', 'best-practices', params.language]
-        },
-        limit: 5,
-        search_type: 'hybrid'
+          limit: 5
+        }
       });
 
       if (!response.data.success) {
@@ -225,51 +219,45 @@ export class RagService {
     try {
       logger.info('查询知识图谱:', params);
 
-      // 首先尝试使用专门的知识图谱API
-      try {
-        const graphResponse = await this.client.post<ApiResponse<any>>('/api/v1/mcp/graph/query', {
-          entity: params.entity,
-          relation_type: params.relation_type,
-          depth: params.depth || 2,
-          include_examples: true
-        });
+      // 使用现有的图谱 API 获取实体信息和关系
+      const entityName = encodeURIComponent(params.entity);
+      
+      // 获取实体信息
+      const entityResponse = await this.client.get<ApiResponse<any>>(
+        `/api/v1/graph/entity/${entityName}`
+      );
 
-        if (graphResponse.data.success) {
-          const graphData = graphResponse.data.data;
-          logger.info(`通过知识图谱API获取到实体 ${params.entity} 的信息`);
-          
-          return {
-            entity_info: graphData.entity_info || {
-              id: params.entity,
-              name: params.entity,
-              type: 'unknown',
-              properties: {}
-            },
-            relationships: graphData.relationships || [],
-            related_entities: graphData.related_entities || [],
-            usage_examples: graphData.usage_examples || []
-          };
+      // 获取相关实体
+      const relatedResponse = await this.client.get<ApiResponse<any[]>>(
+        `/api/v1/graph/related/${entityName}`,
+        {
+          params: {
+            max_depth: params.depth || 2
+          }
         }
-      } catch (graphError) {
-        logger.warn('知识图谱API调用失败，降级到通用查询:', graphError);
-      }
+      );
 
-      // 降级到通用图谱查询
-      const response = await this.client.post<ApiResponse<GraphQueryResult>>('/api/v1/graph/query', {
-        entity: params.entity,
-        relation_type: params.relation_type,
-        depth: params.depth || 2,
-        include_examples: true
-      });
+      // 组合结果
+      const entityInfo = entityResponse.data.data || entityResponse.data || {
+        id: params.entity,
+        name: params.entity,
+        type: 'unknown',
+        properties: {}
+      };
 
-      if (!response.data.success) {
-        throw new Error(response.data.message || '图谱查询失败');
-      }
+      const relatedData = relatedResponse.data.data || relatedResponse.data || [];
+      const relatedEntities = Array.isArray(relatedData) ? relatedData : [];
 
-      return response.data.data || {
-        entity_info: { id: '', name: params.entity, type: 'unknown', properties: {} },
-        relationships: [],
-        related_entities: [],
+      return {
+        entity_info: entityInfo,
+        relationships: relatedEntities.filter((e: any) => e.relationship).map((e: any, idx: number) => ({
+          id: `rel_${idx}`,
+          source: params.entity,
+          type: e.relationship,
+          target: e.name || e.id,
+          properties: e.properties || {}
+        })),
+        related_entities: relatedEntities,
         usage_examples: []
       };
     } catch (error) {
@@ -346,14 +334,12 @@ export class RagService {
     try {
       logger.info('获取设计模式');
 
-      const response = await this.client.post<ApiResponse<RagSearchResult[]>>('/api/v1/docs/search', {
-        query: 'design patterns architecture',
-        filters: {
+      const response = await this.client.get<ApiResponse<RagSearchResult[]>>('/api/v1/documents/search', {
+        params: {
+          query: 'design patterns architecture',
           doc_type: 'business_doc',
-          tags: ['design-patterns', 'architecture']
-        },
-        limit: 20,
-        search_type: 'semantic'
+          limit: 20
+        }
       });
 
       if (!response.data.success) {

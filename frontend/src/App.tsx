@@ -24,7 +24,7 @@ const container = DIContainer.getInstance();
 const apiClient = new ApiClient();
 const tokenStorage = new LocalTokenStorage();
 
-// 注册真正的认证服务
+// 注册认证服务
 container.registerSingleton('AuthService', () => new AuthService(apiClient, tokenStorage));
 container.registerSingleton('DocumentService', () => new SimpleDocumentService());
 container.registerSingleton('ClassificationService', () => new SimpleClassificationService());

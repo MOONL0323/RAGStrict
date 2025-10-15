@@ -165,6 +165,13 @@ class Document(Base):
     uploaded_by = Column(String(36), ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    
+    # 关系定义
+    dev_type = relationship("DevType", foreign_keys=[dev_type_id])
+    team = relationship("Team", foreign_keys=[team_id])
+    project = relationship("Project", foreign_keys=[project_id])
+    module = relationship("Module", foreign_keys=[module_id])
+    uploader = relationship("User", foreign_keys=[uploaded_by])
 
 
 # 文档块模型 (用于向量检索)

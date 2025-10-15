@@ -27,6 +27,7 @@ import {
   TeamOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+import { API_ENDPOINTS } from '../../config/apiConfig';
 
 const { Text } = Typography;
 const { Search } = Input;
@@ -65,7 +66,7 @@ const DocumentList: React.FC<DocumentListProps> = ({ refresh }) => {
   const loadDocuments = async (search?: string) => {
     setLoading(true);
     try {
-      let url = 'http://localhost:8080/api/v1/documents/list';
+      let url = API_ENDPOINTS.DOCUMENTS.LIST;
       if (search) {
         url += `?search=${encodeURIComponent(search)}`;
       }
@@ -94,7 +95,7 @@ const DocumentList: React.FC<DocumentListProps> = ({ refresh }) => {
   // 删除文档
   const handleDelete = async (id: string) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/v1/documents/${id}`, {
+      const response = await fetch(API_ENDPOINTS.DOCUMENTS.DELETE(id), {
         method: 'DELETE',
       });
 

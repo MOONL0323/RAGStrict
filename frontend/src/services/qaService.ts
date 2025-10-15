@@ -38,7 +38,7 @@ export class QAService {
     try {
       console.log('发送智能问答请求:', request);
       
-      const response = await apiClient.post('/v1/qa/ask', {
+      const response = await apiClient.post('/qa/ask', {
         question: request.question,
         context: request.context || [],
         conversation_history: request.conversation_history || []
@@ -62,7 +62,7 @@ export class QAService {
    */
   static async getRecommendedQuestions(): Promise<string[]> {
     try {
-      const response = await apiClient.get('/v1/qa/recommendations');
+      const response = await apiClient.get('/qa/recommendations');
       
       if (response.data.success) {
         return response.data.data.questions || [];
@@ -84,9 +84,9 @@ export class QAService {
   /**
    * 获取会话历史
    */
-  static async getConversationHistory(limit: number = 10): Promise<any[]> {
+  static async getQuestionHistory(limit: number = 10): Promise<any[]> {
     try {
-      const response = await apiClient.get(`/api/v1/qa/history?limit=${limit}`);
+      const response = await apiClient.get(`/qa/history?limit=${limit}`);
       
       if (response.data.success) {
         return response.data.data.conversations || [];

@@ -15,8 +15,7 @@ import {
   MenuUnfoldOutlined,
   BellOutlined,
   SearchOutlined,
-  MessageOutlined,
-  RobotOutlined
+  MessageOutlined
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';

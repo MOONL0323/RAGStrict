@@ -3,7 +3,7 @@ import { Card, Tabs, Row, Col, Statistic, Space, Typography } from 'antd';
 import { FileTextOutlined, CodeOutlined, TeamOutlined, DatabaseOutlined, CloudUploadOutlined, UnorderedListOutlined } from '@ant-design/icons';
 import DocumentUpload from './DocumentUpload';
 import DocumentList from './DocumentList';
-
+import { API_ENDPOINTS } from '../../config/apiConfig';
 const { Title } = Typography;
 
 interface Stats {
@@ -21,7 +21,7 @@ const DocumentManager: React.FC = () => {
 
   const loadStats = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/v1/stats/dashboard');
+      const response = await fetch(API_ENDPOINTS.STATS.DASHBOARD);
       if (response.ok) {
         const data = await response.json();
         setStats({

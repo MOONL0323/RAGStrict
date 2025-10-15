@@ -3,7 +3,7 @@
  * 支持语义搜索、精确搜索、多维度筛选
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Card, 
   Input, 
@@ -12,7 +12,6 @@ import {
   Col, 
   Select, 
   DatePicker, 
-  Checkbox, 
   Space, 
   List, 
   Tag, 
@@ -25,7 +24,7 @@ import {
   Tooltip,
   Progress
 } from 'antd';
-import { SearchService, SearchResultItem } from '../../services/searchService';
+import { SearchService } from '../../services/searchService';
 import { 
   SearchOutlined, 
   FilterOutlined, 

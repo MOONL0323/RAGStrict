@@ -3,6 +3,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Row, Col, Card, Statistic, Typography, Space, Progress, Tag, message, Spin } from 'antd';
 import { 
   FileTextOutlined, 
@@ -30,6 +31,7 @@ interface DashboardStats {
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats>({
     totalDocuments: 0,
     processingDocuments: 0,
@@ -50,7 +52,7 @@ export const Dashboard: React.FC = () => {
     try {
       setLoading(true);
       
-      const response = await apiClient.get('/v1/stats/dashboard');
+      const response = await apiClient.get('/stats/dashboard');
       
       if (response.success && response.data) {
         setStats(response.data);
@@ -219,19 +221,31 @@ export const Dashboard: React.FC = () => {
         <Col span={24}>
           <Card title="快速操作">
             <Space wrap>
-              <Card.Grid style={{ width: '25%', textAlign: 'center' }}>
+              <Card.Grid 
+                style={{ width: '25%', textAlign: 'center', cursor: 'pointer' }}
+                onClick={() => navigate('/documents')}
+              >
                 <FileTextOutlined style={{ fontSize: '24px', color: '#1890ff', marginBottom: '8px' }} />
                 <div>上传文档</div>
               </Card.Grid>
-              <Card.Grid style={{ width: '25%', textAlign: 'center' }}>
+              <Card.Grid 
+                style={{ width: '25%', textAlign: 'center', cursor: 'pointer' }}
+                onClick={() => navigate('/documents')}
+              >
                 <DatabaseOutlined style={{ fontSize: '24px', color: '#52c41a', marginBottom: '8px' }} />
                 <div>查看文档</div>
               </Card.Grid>
-              <Card.Grid style={{ width: '25%', textAlign: 'center' }}>
+              <Card.Grid 
+                style={{ width: '25%', textAlign: 'center', cursor: 'pointer' }}
+                onClick={() => navigate('/knowledge-graph')}
+              >
                 <NodeIndexOutlined style={{ fontSize: '24px', color: '#722ed1', marginBottom: '8px' }} />
                 <div>知识图谱</div>
               </Card.Grid>
-              <Card.Grid style={{ width: '25%', textAlign: 'center' }}>
+              <Card.Grid 
+                style={{ width: '25%', textAlign: 'center', cursor: 'pointer' }}
+                onClick={() => navigate('/users')}
+              >
                 <UserOutlined style={{ fontSize: '24px', color: '#fa8c16', marginBottom: '8px' }} />
                 <div>用户管理</div>
               </Card.Grid>

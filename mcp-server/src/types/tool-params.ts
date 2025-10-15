@@ -7,6 +7,8 @@ export interface SearchCodeExamplesParams {
   query: string;
   language?: 'python' | 'typescript' | 'javascript' | 'java' | 'go' | 'cpp';
   framework?: string;
+  team?: string;
+  project?: string;
   limit?: number;
 }
 

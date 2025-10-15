@@ -5,14 +5,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  Card, Row, Col, Statistic, Typography, Button, Space, Spin, 
+  Card, Row, Col, Statistic, Typography, Button, Space, 
   message, Select, Drawer, Descriptions, Tag, Alert, Divider 
 } from 'antd';
 import { 
   NodeIndexOutlined, ApiOutlined, ReloadOutlined, 
   SearchOutlined, LinkOutlined, FileTextOutlined 
 } from '@ant-design/icons';
-import axios from 'axios';
+import apiClient from '../../services/ApiClient';
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -53,13 +53,11 @@ const LiveKnowledgeGraph: React.FC = () => {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [searchDepth, setSearchDepth] = useState(2);
 
-  const API_BASE = 'http://localhost:8080/api/v1';
-
   // 加载图统计
   const loadStats = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API_BASE}/graph/stats`);
+      const response = await apiClient.get('/graph/stats');
       const data = response.data;
       
       // 兼容不同的响应格式
@@ -95,11 +93,10 @@ const LiveKnowledgeGraph: React.FC = () => {
     
     setLoading(true);
     try {
-      const response = await axios.get(`${API_BASE}/graph/entity/${encodeURIComponent(name)}`);
-      const data = response.data;
+      const response = await apiClient.get(`/graph/entity/${encodeURIComponent(name)}`);
       
-      // 兼容不同的响应格式
-      const entity = data.success ? data.entity : data;
+      // apiClient 已经处理了响应格式
+      const entity = response.data?.entity || response.data;
       
       if (entity) {
         setEntityDetail(entity);
@@ -124,11 +121,10 @@ const LiveKnowledgeGraph: React.FC = () => {
   // 查找相关实体
   const findRelated = async (name: string) => {
     try {
-      const response = await axios.get(
-        `${API_BASE}/graph/related/${encodeURIComponent(name)}?max_depth=${searchDepth}`
+      const response = await apiClient.get(
+        `/graph/related/${encodeURIComponent(name)}?max_depth=${searchDepth}`
       );
-      const data = response.data;
-      const related = data.success ? data.related : data;
+      const related = response.data?.related || response.data;
       
       if (Array.isArray(related)) {
         setRelatedEntities(related);
@@ -136,23 +132,6 @@ const LiveKnowledgeGraph: React.FC = () => {
     } catch (error) {
       console.error('查找相关实体失败:', error);
       setRelatedEntities([]);
-    }
-  };
-
-  // 从文档创建图谱
-  const storeDocument = async (docId: number) => {
-    setLoading(true);
-    try {
-      const response = await axios.post(`${API_BASE}/graph/store-from-document/${docId}`);
-      if (response.data.success) {
-        message.success('文档已存入图谱');
-        await loadStats(); // 刷新统计
-      }
-    } catch (error) {
-      message.error('存储失败');
-      console.error(error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -252,7 +231,7 @@ const LiveKnowledgeGraph: React.FC = () => {
             type="primary"
             onClick={async () => {
               try {
-                await axios.post(`${API_BASE}/graph/init-test-data`);
+                await apiClient.post('/graph/init-test-data', {});
                 message.success('测试数据初始化成功');
                 await loadStats();
               } catch (error) {
@@ -453,8 +432,7 @@ const LiveKnowledgeGraph: React.FC = () => {
             </summary>
             <div style={{ marginTop: 12, padding: 12, background: '#f5f5f5', borderRadius: 4 }}>
               <Space direction="vertical" style={{ width: '100%' }}>
-                <Text><Text strong>API地址:</Text> {API_BASE}</Text>
-                <Text><Text strong>统计端点:</Text> {API_BASE}/graph/stats</Text>
+                <Text><Text strong>统计端点:</Text> /api/v1/graph/stats</Text>
                 <Text><Text strong>当前数据:</Text></Text>
                 <pre style={{ fontSize: 12, background: '#fff', padding: 8, borderRadius: 4, maxHeight: 200, overflow: 'auto' }}>
                   {JSON.stringify(stats, null, 2)}

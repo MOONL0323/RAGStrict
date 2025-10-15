@@ -16,14 +16,11 @@ import {
   Space
 } from 'antd';
 import { UserOutlined, LockOutlined, MailOutlined, IdcardOutlined } from '@ant-design/icons';
-import { useAuth } from '../../hooks/useAuth';
-import { RegisterCredentials } from '../../interfaces/IAuthService';
 
 const { Title, Text } = Typography;
 
 export const RegisterPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
   const navigate = useNavigate();
 
   const onFinish = async (values: any) => {
@@ -32,7 +29,8 @@ export const RegisterPage: React.FC = () => {
       // 直接调用API
       const { confirmPassword, ...registerData } = values;
       
-      const response = await fetch('http://localhost:8080/api/v1/auth/register', {
+      const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000/api';
+      const response = await fetch(`${API_BASE_URL}/v1/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

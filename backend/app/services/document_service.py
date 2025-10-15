@@ -154,7 +154,7 @@ class DocumentService:
                 query = query.where(Document.access_level == access_level)
             
             if status:
-                query = query.where(Document.status == status)
+                query = query.where(Document.processing_status == status)
             
             if search:
                 search_term = f"%{search}%"
@@ -773,9 +773,9 @@ class DocumentService:
             
             # 按状态统计
             status_stats = await self.db.execute(
-                select(Document.status, func.count())
+                select(Document.processing_status, func.count())
                 .select_from(base_query.subquery())
-                .group_by(Document.status)
+                .group_by(Document.processing_status)
             )
             
             # 最近上传的文档

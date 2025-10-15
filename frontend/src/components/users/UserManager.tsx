@@ -14,30 +14,26 @@ import {
   Form,
   Input,
   Select,
-  Switch,
   DatePicker,
   message,
   Popconfirm,
   Typography,
   Row,
   Col,
-  Statistic,
-  Divider
+  Statistic
 } from 'antd';
 import {
   UserOutlined,
   EditOutlined,
   DeleteOutlined,
   PlusOutlined,
-  SearchOutlined,
   TeamOutlined,
-  CrownOutlined,
-  LockOutlined
+  CrownOutlined
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 const { Option } = Select;
 const { Search } = Input;
 
@@ -210,6 +206,7 @@ const UserManager: React.FC = () => {
 
   useEffect(() => {
     loadUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 筛选用户数据

@@ -25,6 +25,7 @@ import {
   CheckCircleOutlined,
 } from '@ant-design/icons';
 import type { UploadFile, UploadProps } from 'antd/es/upload/interface';
+import { API_ENDPOINTS } from '../../config/apiConfig';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -92,7 +93,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ onSuccess }) => {
   const loadClassifications = async () => {
     setLoadingClassifications(true);
     try {
-      const response = await fetch('http://localhost:8080/api/v1/classifications/options');
+      const response = await fetch(API_ENDPOINTS.CLASSIFICATIONS.OPTIONS);
       
       if (response.ok) {
         const data = await response.json();
@@ -167,7 +168,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ onSuccess }) => {
     }
 
     try {
-      const response = await fetch('http://localhost:8080/api/v1/documents/upload', {
+      const response = await fetch(API_ENDPOINTS.DOCUMENTS.UPLOAD, {
         method: 'POST',
         body: formData,
       });
@@ -301,11 +302,12 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ onSuccess }) => {
                   ? '代码' 
                   : '规范'
             }分类`}
-            rules={[{ required: true, message: '请选择分类' }]}
-            tooltip="选择具体的文档分类"
+            rules={[{ required: true, message: '请选择或输入分类' }]}
+            tooltip="选择具体的文档分类，也可以自定义输入"
           >
             <Select
-              placeholder={`请选择${
+              mode="tags"
+              placeholder={`请选择或输入${
                 documentType === 'business_doc' 
                   ? '文档' 
                   : documentType === 'demo_code' 
@@ -313,6 +315,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ onSuccess }) => {
                     : '规范'
               }分类`}
               loading={loadingClassifications}
+              maxTagCount={1}
               size="large"
             >
               {getDevTypeOptions().map((type) => (

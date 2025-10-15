@@ -112,7 +112,7 @@ export class SimpleDocumentService implements IDocumentService {
   }
 
   async downloadDocument(id: string): Promise<Blob> {
-    const document = await this.getDocument(id);
+    await this.getDocument(id);
     const content = await this.getDocumentContent(id);
     return new Blob([content], { type: 'text/plain' });
   }

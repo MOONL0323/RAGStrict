@@ -254,7 +254,7 @@ const IntelligentQA: React.FC = () => {
   };
 
   // 使用推荐问题
-  const useSuggestedQuestion = (question: string) => {
+  const handleSuggestedQuestion = (question: string) => {
     setInputValue(question);
   };
 
@@ -295,7 +295,7 @@ const IntelligentQA: React.FC = () => {
                   cursor: 'pointer',
                   borderStyle: 'dashed'
                 }}
-                onClick={() => useSuggestedQuestion(question)}
+                onClick={() => handleSuggestedQuestion(question)}
               >
                 {question}
               </Tag>

@@ -27,10 +27,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const authService = DIContainer.getInstance().resolve<IAuthService>('AuthService');
 
-  useEffect(() => {
-    checkAuthState();
-  }, []);
-
   const checkAuthState = async () => {
     try {
       const currentUser = await authService.getCurrentUser();
@@ -42,6 +38,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    checkAuthState();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const login = async (credentials: LoginCredentials): Promise<AuthResult> => {
     setLoading(true);

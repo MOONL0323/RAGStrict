@@ -24,7 +24,7 @@ const Login: React.FC = () => {
     try {
       setLoading(true);
       
-      const response = await apiClient.post('/v1/auth/login', values);
+      const response = await apiClient.post('/auth/login', values);
       
       if (response.success && response.data) {
         // 存储用户信息

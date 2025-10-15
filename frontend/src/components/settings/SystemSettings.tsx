@@ -12,7 +12,6 @@ import {
   Button, 
   Space, 
   Typography, 
-  Divider, 
   message,
   Modal,
   Row,
@@ -23,12 +22,11 @@ import {
 import { 
   SettingOutlined, 
   DatabaseOutlined, 
-  ApiOutlined, 
   SafetyOutlined,
   ThunderboltOutlined 
 } from '@ant-design/icons';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Paragraph } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
